@@ -138,6 +138,10 @@
   .checklist-chip:hover { border-color: var(--blue-light); color: var(--blue); background: var(--blue-pale); }
   .checklist-chip.chip-active { background: var(--blue-pale); border-color: var(--blue); color: var(--blue); font-weight: 600; }
   .checklist-chip.kb-focused  { outline: 2px solid var(--blue); outline-offset: 2px; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  .als-bls-btn.kb-focused { outline: 3px solid rgba(59,130,246,0.55); outline-offset: -3px; }
+  .yesno-btn.kb-focused  { outline: 2px solid var(--blue); outline-offset: 2px; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  .thumbs-btn.kb-focused { outline: 2px solid var(--blue); outline-offset: 2px; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  .alert-box.kb-focused  { outline: 2px solid var(--blue); outline-offset: 2px; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
   .checklist-other { margin-top: 6px; width: 100%; box-sizing: border-box; }
 
   /* Patient Response quick-select */
@@ -629,7 +633,7 @@ const STEPS = [
     desc: 'Transport details, receiving facility, and disposition.',
     icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/><line x1="12" y1="5" x2="12" y2="9"/><line x1="10" y1="7" x2="14" y2="7"/></svg>`,
     fields: [
-      { id: 'transport_position', label: 'Transport Position', type: 'select', default: "Semi-Fowler's", options: ["Supine","Semi-Fowler's","Position of comfort","Left lateral recumbent","Trendelenburg","Spinal precautions"] },
+      { id: 'transport_position', label: 'Transport Position', type: 'select', default: "Semi-Fowler's", options: ["Supine","Semi-Fowler's","Position of comfort","Left lateral recumbent","Trendelenburg","Backboard"] },
       { id: 'receiving_facility', label: 'Receiving Facility', type: 'hospitalselect', required: true },
       { id: 'receiving_staff', label: 'Report Given To', type: 'select', default: 'RN assuming care', options: ['RN assuming care','Doctor assuming care','Hospital Staff'], opt: true },
       { id: 'bed_transfer', label: 'Patient Moved to Hospital Bed Via', type: 'select', options: ['Extremity lift','Walk-assisted','Slide board','Draw sheet','Self-ambulatory','Sheet lift','Scoop stretcher','Backboard'], required: true },
@@ -853,9 +857,9 @@ function renderStep(idx) {
       fieldsHtml += `
         <div class="als-bls-wrap">
           <div class="als-bls-label">Service Level</div>
-          <div class="als-bls-banner${isBls ? ' bls-mode' : ''}" id="als_bls_banner">
-            <button type="button" class="als-bls-btn${!isBls ? ' als-active' : ''}" onclick="setServiceLevel('als')">ALS</button>
-            <button type="button" class="als-bls-btn${isBls ? ' bls-active' : ''}" onclick="setServiceLevel('bls')">BLS</button>
+          <div class="als-bls-banner${isBls ? ' bls-mode' : ''}" id="als_bls_banner" role="radiogroup" aria-label="Service Level">
+            <button type="button" class="als-bls-btn${!isBls ? ' als-active' : ''}" onclick="setServiceLevel('als')" data-nav-group="service_level" data-nav-select="true" role="radio" aria-checked="${!isBls}" tabindex="${isBls ? -1 : 0}">ALS</button>
+            <button type="button" class="als-bls-btn${isBls ? ' bls-active' : ''}" onclick="setServiceLevel('bls')" data-nav-group="service_level" data-nav-select="true" role="radio" aria-checked="${isBls}" tabindex="${isBls ? 0 : -1}">BLS</button>
           </div>
           <input type="hidden" id="f_${f.id}" value="${sv}">
         </div>`;
@@ -916,7 +920,7 @@ function renderStep(idx) {
       const otherItems = savedItems.filter(i => !f.options.includes(i));
       const otherText = otherItems.join(', ');
       const chipsHtml = f.options.map(o =>
-        `<button type="button" class="checklist-chip${savedItems.includes(o) ? ' chip-active' : ''}" onclick="toggleChip('${f.id}', this)">${o}</button>`
+        `<button type="button" class="checklist-chip${savedItems.includes(o) ? ' chip-active' : ''}" tabindex="-1" data-nav-group="${f.id}" data-nav-multi="true" onclick="toggleChip('${f.id}', this)">${o}</button>`
       ).join('');
       fieldsHtml += `<div class="field">
         <label>${f.label}<span class="opt">optional</span></label>
@@ -929,8 +933,8 @@ function renderStep(idx) {
       fieldsHtml += `<div class="field">
         <label>${f.label}${f.required ? ' <span style="color:var(--red)">*</span>' : ''}</label>
         <div class="yesno-group">
-          <button type="button" class="yesno-btn ${sv === 'yes' ? 'yn-active' : ''}" onclick="setYesNo('${f.id}', 'yes', this)">Yes</button>
-          <button type="button" class="yesno-btn ${sv === 'no' ? 'yn-active' : ''}" onclick="setYesNo('${f.id}', 'no', this)">No</button>
+          <button type="button" class="yesno-btn ${sv === 'yes' ? 'yn-active' : ''}" onclick="setYesNo('${f.id}', 'yes', this)" data-nav-group="${f.id}" data-nav-select="true">Yes</button>
+          <button type="button" class="yesno-btn ${sv === 'no' ? 'yn-active' : ''}" onclick="setYesNo('${f.id}', 'no', this)" data-nav-group="${f.id}" data-nav-select="true">No</button>
         </div>
         <input type="hidden" id="f_${f.id}" value="${sv}">
       </div>`;
@@ -1021,7 +1025,7 @@ function renderStep(idx) {
       const patientAge = parsePatientAge();
       const elderGrayEligible = patientAge === null || patientAge >= 65;
       const boxes = ALERTS.map(a => {
-        const btn = `<button type="button" class="alert-box${ad[a.key]?.active ? ' alert-active' : ''}" id="alertbox_${a.key}" onclick="toggleAlertBox('${a.key}')">
+        const btn = `<button type="button" class="alert-box${ad[a.key]?.active ? ' alert-active' : ''}" id="alertbox_${a.key}" onclick="toggleAlertBox('${a.key}')" data-nav-group="alerts" data-nav-multi="true">
           <span class="alert-icon">${a.icon}</span>${a.label}</button>`;
         if (a.key === 'elder_gray') {
           return `<span id="elder_gray_alert_wrap" style="display:${elderGrayEligible ? '' : 'none'}">${btn}</span>`;
@@ -1183,14 +1187,14 @@ function renderStep(idx) {
         <div style="display:flex;align-items:center">
           <div class="thumbs-group">
             <button type="button" class="thumbs-btn thumbs-up${sv === 'up' ? ' tb-active' : ''}"
-              onclick="setThumbs('${f.id}', 'up', this)" title="${tipUp}">
+              onclick="setThumbs('${f.id}', 'up', this)" title="${tipUp}" data-nav-group="${f.id}" data-nav-select="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
                 <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </button>
             <button type="button" class="thumbs-btn thumbs-down${sv === 'down' ? ' tb-active' : ''}"
-              onclick="setThumbs('${f.id}', 'down', this)" title="${tipDown}">
+              onclick="setThumbs('${f.id}', 'down', this)" title="${tipDown}" data-nav-group="${f.id}" data-nav-select="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
                 <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -1790,20 +1794,22 @@ function foundBlur(fieldId) {
 function foundKeydown(e, fieldId) {
   const drop = document.getElementById(`founddrop_${fieldId}`);
   const options = drop ? Array.from(drop.querySelectorAll('.hosp-option')) : [];
-  if (!options.length) return;
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
+  if (e.key === 'ArrowDown' && options.length) {
+    e.preventDefault(); e.stopPropagation();   // stop global nav from also firing
     _foundFocusIdx = Math.min(_foundFocusIdx + 1, options.length - 1);
     options.forEach((o, i) => o.classList.toggle('hosp-focused', i === _foundFocusIdx));
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
+  } else if (e.key === 'ArrowUp' && options.length) {
+    e.preventDefault(); e.stopPropagation();
     _foundFocusIdx = Math.max(_foundFocusIdx - 1, 0);
     options.forEach((o, i) => o.classList.toggle('hosp-focused', i === _foundFocusIdx));
-  } else if (e.key === 'Enter' && _foundFocusIdx >= 0) {
+  } else if (e.key === 'Enter') {
     e.preventDefault();
-    foundPick(fieldId, options[_foundFocusIdx].dataset.val);
+    if (_foundFocusIdx >= 0 && options.length) foundPick(fieldId, options[_foundFocusIdx].dataset.val);
+    if (drop) { drop.classList.remove('open'); _foundFocusIdx = -1; }
+    if (window._kbAdvanceFocus) window._kbAdvanceFocus();   // advance to next field
   } else if (e.key === 'Escape') {
-    drop.classList.remove('open');
+    if (drop) { drop.classList.remove('open'); _foundFocusIdx = -1; }
+    e.stopPropagation();
   }
 }
 
@@ -1849,20 +1855,22 @@ function hospBlur(fieldId) {
 function hospKeydown(e, fieldId) {
   const drop = document.getElementById(`hospdrop_${fieldId}`);
   const options = drop ? Array.from(drop.querySelectorAll('.hosp-option')) : [];
-  if (!options.length) return;
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
+  if (e.key === 'ArrowDown' && options.length) {
+    e.preventDefault(); e.stopPropagation();
     _hospFocusIdx = Math.min(_hospFocusIdx + 1, options.length - 1);
     options.forEach((o, i) => o.classList.toggle('hosp-focused', i === _hospFocusIdx));
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
+  } else if (e.key === 'ArrowUp' && options.length) {
+    e.preventDefault(); e.stopPropagation();
     _hospFocusIdx = Math.max(_hospFocusIdx - 1, 0);
     options.forEach((o, i) => o.classList.toggle('hosp-focused', i === _hospFocusIdx));
-  } else if (e.key === 'Enter' && _hospFocusIdx >= 0) {
+  } else if (e.key === 'Enter') {
     e.preventDefault();
-    hospPick(fieldId, options[_hospFocusIdx].dataset.val);
+    if (_hospFocusIdx >= 0 && options.length) hospPick(fieldId, options[_hospFocusIdx].dataset.val);
+    if (drop) { drop.classList.remove('open'); _hospFocusIdx = -1; }
+    if (window._kbAdvanceFocus) window._kbAdvanceFocus();
   } else if (e.key === 'Escape') {
-    drop.classList.remove('open');
+    if (drop) { drop.classList.remove('open'); _hospFocusIdx = -1; }
+    e.stopPropagation();
   }
 }
 
@@ -2060,6 +2068,11 @@ function setServiceLevel(level) {
     alsBtn.classList.toggle('als-active', level === 'als');
     blsBtn.classList.toggle('bls-active', level === 'bls');
     banner.classList.toggle('bls-mode', level === 'bls');
+    // Sync ARIA + roving tabindex
+    alsBtn.setAttribute('aria-checked', level === 'als' ? 'true' : 'false');
+    blsBtn.setAttribute('aria-checked', level === 'bls' ? 'true' : 'false');
+    alsBtn.tabIndex = level === 'als' ? 0 : -1;
+    blsBtn.tabIndex = level === 'bls' ? 0 : -1;
   }
 
   BLS_AUTO_STEPS.forEach(stepId => {
@@ -2397,7 +2410,7 @@ function generateNarrative() {
     const patient = normalizePatient(v('dispatch','patient'));
     const dispCC  = v('dispatch','dispatch_complaint');
 
-    let line = `${unit} was dispatched to`;
+    let line = `${unit} ${unitArr.length > 1 ? 'were' : 'was'} dispatched to`;
     if (patient) line += ` a ${patient} patient`;
     if (dispCC)  line += ` for ${dispCC}`;
     paras.push(dot(line));
@@ -2411,7 +2424,10 @@ function generateNarrative() {
     const bits  = [];
     if (found) bits.push(`the patient was found ${found}`);
     if (notes) bits.push(notes);
-    if (bits.length) paras.push(dot('On arrival, ' + bits.join('; ')));
+    const arrivalSentence = bits.length ? dot('On arrival, ' + bits.join('; ')) : '';
+    const moiSentence = moi ? dot(`Patient complained of ${moi}`) : '';
+    const scenePara = [arrivalSentence, moiSentence].filter(Boolean).join(' ');
+    if (scenePara) paras.push(scenePara);
   }
 
   // ── Para 2: Initial Assessment + On-Scene Interventions + Stretcher ──
@@ -2735,43 +2751,73 @@ function generateNarrative() {
     if (sentences.length) paras.push(sentences.join(' '));
   }
 
-  // ── Para 4: Transport + Transfer of Care ──
-  if (!skip('hospital')) {
-    const sceneDisp = v('scene','disposition');
+  // ── Para 4: Disposition / Transport ──
+  const sceneDisp = v('scene','disposition');
+  let dispArr = [];
+  try { dispArr = JSON.parse(v('dispatch','unit') || '[]'); } catch(e) { dispArr = [v('dispatch','unit')]; }
+  dispArr = dispArr.filter(Boolean);
+  const dispUnit = dispArr.length > 1
+    ? dispArr.slice(0,-1).join(', ') + ' and ' + dispArr[dispArr.length-1]
+    : (dispArr[0] || 'EMS');
+  if (sceneDisp === 'Patient refused transport (AMA)') {
+    paras.push(dot('Patient refused transport (AMA)'));
+    paras.push(dot(`${dispUnit} placed back in service`));
+  } else if (sceneDisp === 'Refused assessment (RA)') {
+    paras.push(dot('Patient refused assessment (RA)'));
+    paras.push(dot(`${dispUnit} placed back in service`));
+  } else if (sceneDisp === 'DOA / pronounced on scene') {
+    paras.push(dot('Patient pronounced DOA'));
+    paras.push(dot(`${dispUnit} placed back in service`));
+  } else if (sceneDisp === 'Transferred to Transcare') {
+    let tcArr = [];
+    try { tcArr = JSON.parse(v('dispatch','unit') || '[]'); } catch(e) { tcArr = [v('dispatch','unit')]; }
+    tcArr = tcArr.filter(Boolean);
+    const tcUnit = tcArr.length > 1
+      ? tcArr.slice(0,-1).join(', ') + ' and ' + tcArr[tcArr.length-1]
+      : (tcArr[0] || 'EMS');
+    paras.push(dot(`Transferred to Transcare and ${tcUnit} placed back in service`));
+  } else if (sceneDisp === 'Cancelled en route' || sceneDisp === 'Cancelled by TPD') {
+    let cxArr = [];
+    try { cxArr = JSON.parse(v('dispatch','unit') || '[]'); } catch(e) { cxArr = [v('dispatch','unit')]; }
+    cxArr = cxArr.filter(Boolean);
+    const cxUnit = cxArr.length > 1
+      ? cxArr.slice(0,-1).join(', ') + ' and ' + cxArr[cxArr.length-1]
+      : (cxArr[0] || 'EMS');
+    const cxReason = sceneDisp === 'Cancelled en route' ? 'cancelled en route' : 'cancelled by TPD';
+    paras.push(dot(`${cxUnit} ${cxReason} and placed back in service`));
+  } else if (!skip('hospital')) {
+    // 'Transported by EMS' — build transport + handoff paragraph from hospital fields
     const position    = v('hospital','transport_position');
     const facility    = v('hospital','receiving_facility');
     const staff       = v('hospital','receiving_staff');
     const bedTransfer = v('hospital','bed_transfer');
-
-    if (sceneDisp && sceneDisp !== 'Transported by EMS') {
-      paras.push(dot(sceneDisp));
-    } else {
-      const tParts = [];
-      if (position) tParts.push(`in ${position.toLowerCase()} position`);
-      if (facility)  tParts.push(`to ${facility}`);
-      const transport = tParts.length
-        ? dot(`The patient was transported ${tParts.join(', ')} without incident`)
-        : 'The patient was transported without incident.';
-      const handoff = staff
-        ? `A verbal report was given to ${staff} upon arrival and care was transferred.`
-        : 'Upon arrival, care was transferred to the receiving staff.';
-      const bedLine = bedTransfer
-        ? ` The patient was moved to the hospital bed via ${bedTransfer.toLowerCase()} without incident.`
-        : '';
-      paras.push(`${transport} ${handoff}${bedLine}`);
+    const tParts = [];
+    if (position) {
+      const posPhrase = {
+        'Supine':                 'in the supine position',
+        "Semi-Fowler's":          "in the Semi-Fowler's position",
+        'Position of comfort':    'in a position of comfort',
+        'Left lateral recumbent': 'in the left lateral recumbent position',
+        'Trendelenburg':          'in the Trendelenburg position',
+        'Backboard':              'via backboard',
+      };
+      tParts.push(posPhrase[position] || `in the ${position.toLowerCase()} position`);
     }
-  }
-
-  // ── Cancelled disposition: placed back in service ──
-  const finalDisp = v('scene', 'disposition');
-  if (finalDisp === 'Cancelled en route' || finalDisp === 'Cancelled by TPD') {
-    let unitArr = [];
-    try { unitArr = JSON.parse(v('dispatch','unit') || '[]'); } catch(e) { unitArr = [v('dispatch','unit')]; }
-    unitArr = unitArr.filter(Boolean);
-    const unit = unitArr.length > 1
-      ? unitArr.slice(0,-1).join(', ') + ' and ' + unitArr[unitArr.length-1]
-      : (unitArr[0] || 'EMS');
-    paras.push(dot(`${unit} placed back in service`));
+    if (facility)  tParts.push(`to ${facility}`);
+    const transport = tParts.length
+      ? dot(`The patient was transported ${tParts.join(', ')}`)
+      : 'The patient was transported.';
+    const handoff = staff
+      ? `A verbal report was given to ${staff} upon arrival and care was transferred.`
+      : 'Upon arrival, care was transferred to the receiving staff.';
+    const bedPhrases = {
+      'Walk-assisted':   ' Patient ambulated to the hospital bed with assistance and without incident.',
+      'Self-ambulatory': ' Patient self ambulated to the hospital bed without incident.',
+    };
+    const bedLine = bedTransfer
+      ? (bedPhrases[bedTransfer] || ` Patient was moved to the hospital bed via ${bedTransfer.toLowerCase()} without incident.`)
+      : '';
+    paras.push(`${transport} ${handoff}${bedLine}`);
   }
 
   renderNarrative(paras.join('\n\n'));
@@ -3033,7 +3079,20 @@ function closeKbDropdown() {
       if (item.el.tagName === 'INPUT') { try { item.el.select(); } catch(e) {} }
       if (item.el.tagName === 'SELECT') { openKbDropdown(item.el); }
     } else {
-      var chip = preferLast ? item.chips[item.chips.length - 1] : item.chips[0];
+      var chip;
+      var firstChip = item.chips[0];
+      if (firstChip && firstChip.dataset.navSelect === 'true') {
+        // Select-on-move groups (ALS/BLS, Yes/No, thumbs): land on the currently selected option
+        chip = item.chips.filter(function(c) {
+          return c.getAttribute('aria-checked') === 'true' ||
+                 c.classList.contains('yn-active') ||
+                 c.classList.contains('tb-active') ||
+                 c.classList.contains('als-active') ||
+                 c.classList.contains('bls-active');
+        })[0] || item.chips[0];
+      } else {
+        chip = preferLast ? item.chips[item.chips.length - 1] : item.chips[0];
+      }
       chip.classList.add('kb-focused');
       chip.focus();
     }
@@ -3042,15 +3101,16 @@ function closeKbDropdown() {
   function moveWithinGroup(active, dir) {
     var gid = active.dataset.navGroup;
     var container = document.getElementById('stepContainer');
-    if (!container || !gid) return;
+    if (!container || !gid) return null;
     var chips = Array.from(container.querySelectorAll('button[data-nav-group="' + gid + '"]')).filter(isVisible);
     var cur = chips.indexOf(active);
-    if (cur === -1) return;
+    if (cur === -1) return null;
     var next = cur + dir;
-    if (next < 0 || next >= chips.length) return;
+    if (next < 0 || next >= chips.length) return null;
     removeKbFocus();
     chips[next].classList.add('kb-focused');
     chips[next].focus();
+    return chips[next];
   }
 
   function attemptNextPage() {
@@ -3064,14 +3124,93 @@ function closeKbDropdown() {
     }
   }
 
+  // Navigate to the previous step and focus its last nav item.
+  function attemptPrevPage() {
+    if (state.view !== 'steps' || state.current === 0) return;
+    var prevStep = state.current;
+    goBack();
+    if (state.current !== prevStep) {
+      setTimeout(function() {
+        var navItems = getCurrentPageNavItems();
+        if (navItems.length) focusNavItem(navItems[navItems.length - 1], true);
+      }, 0);
+    }
+  }
+
+  // Returns the first nav item whose element is a descendant of `container`.
+  function findFirstNavItemInElement(navItems, container) {
+    for (var i = 0; i < navItems.length; i++) {
+      var item = navItems[i];
+      var testEl = item.type === 'field' ? item.el : (item.chips && item.chips[0]);
+      if (testEl && container.contains(testEl)) return item;
+    }
+    return null;
+  }
+
+  // After clicking a chip, advance focus (or enter a revealed section for thumbs-down).
+  // Called synchronously; the DOM walk happens inside a zero-delay timeout so that
+  // setThumbs / setYesNo etc. have already updated the DOM.
+  function advanceAfterChipClick(clickedBtn) {
+    var groupId = clickedBtn.dataset.navGroup;
+    var isSingleChoice = clickedBtn.dataset.navSelect === 'true';
+    var isThumbsDown = clickedBtn.classList.contains('thumbs-down');
+
+    setTimeout(function() {
+      var navItems = getCurrentPageNavItems();
+
+      // ── Thumbs-down special case ────────────────────────────────────
+      // If the bardrop (or any showwhen_*_down container) just became
+      // visible, focus the first navigable item inside it.
+      if (isSingleChoice && isThumbsDown) {
+        var bardrop = document.getElementById('bardrop_' + groupId);
+        if (bardrop && bardrop.style.display !== 'none') {
+          var hit = findFirstNavItemInElement(navItems, bardrop);
+          if (hit) { focusNavItem(hit, false); return; }
+        }
+        // Fallback: showwhen containers without a bar-drop wrapper
+        var swContainers = document.querySelectorAll('.showwhen_' + groupId + '_down');
+        for (var c = 0; c < swContainers.length; c++) {
+          if (swContainers[c].offsetParent !== null) {
+            var hit2 = findFirstNavItemInElement(navItems, swContainers[c]);
+            if (hit2) { focusNavItem(hit2, false); return; }
+          }
+        }
+      }
+
+      // ── Default: advance to the next item after this chip-group ─────
+      var idx = -1;
+      for (var i = 0; i < navItems.length; i++) {
+        if (navItems[i].type === 'chip-group' && navItems[i].groupId === groupId) {
+          idx = i; break;
+        }
+      }
+      if (idx !== -1) {
+        idx < navItems.length - 1 ? focusNavItem(navItems[idx + 1], false) : attemptNextPage();
+      }
+    }, 0);
+  }
+
   // ── Main keydown listener ─────────────────────────────────────────
   document.addEventListener('keydown', function(e) {
+    // ── Review Report: Enter triggers Generate Narrative ─────────────
+    if (state.view === 'review' && e.key === 'Enter') {
+      var ae = document.activeElement;
+      // Don't intercept if the user is actively typing in a text field
+      if (ae && ae.tagName === 'TEXTAREA') return;
+      if (ae && ae.tagName === 'INPUT' && ae.type !== 'button' && ae.type !== 'submit' && ae.type !== 'reset') return;
+      e.preventDefault();
+      generateNarrative();
+      return;
+    }
+
     if (state.view !== 'steps') return;
     var key = e.key, active = document.activeElement;
     if (!active) return;
 
     var isChip      = active.tagName === 'BUTTON' && !!active.dataset.navGroup;
+    var isTextarea  = active.tagName === 'TEXTAREA' && isVisible(active);
     var isTextField = !!(active.matches && active.matches(TEXT_SEL) && isVisible(active));
+    var isTextInput = isTextField && !isTextarea;   // single-line inputs only
     var isNavSelect = active.tagName === 'SELECT' && isVisible(active) &&
                       !active.classList.contains('unit-type-select') &&
                       !active.classList.contains('vital-select');
@@ -3081,19 +3220,69 @@ function closeKbDropdown() {
       if (key === 'ArrowDown' || key === 'ArrowUp') {
         e.preventDefault();
         if (!_kbDrop.selectEl) {
+          // Down Arrow at the last nav item (field already has a value): advance
+          // instead of re-opening the dropdown.
+          if (key === 'ArrowDown') {
+            var niSelD = getCurrentPageNavItems();
+            var idxSelD = getActiveIdx(niSelD);
+            if (idxSelD === niSelD.length - 1 && active.value) {
+              attemptNextPage();
+              return;
+            }
+          }
           openKbDropdown(active);   // first arrow press: open overlay
         } else {
-          // Subsequent presses: move highlight
-          var newIdx = key === 'ArrowDown'
-            ? Math.min(_kbDrop.highlightIdx + 1, _kbDrop.options.length - 1)
-            : Math.max(_kbDrop.highlightIdx - 1, 0);
-          highlightKbDropdownItem(newIdx);
+          // Dropdown is open: move highlight, or exit at boundary on a fresh keypress.
+          // e.repeat === true  → key is being held; stay at boundary (don't exit).
+          // e.repeat === false → key was freshly pressed; exit the dropdown.
+          var atBottom = _kbDrop.highlightIdx >= _kbDrop.options.length - 1;
+          var atTop    = _kbDrop.highlightIdx <= 0;
+
+          if (key === 'ArrowDown' && atBottom) {
+            if (!e.repeat) {
+              // Fresh Down at last option: close and advance to next nav item.
+              closeKbDropdown();
+              var niD = getCurrentPageNavItems();
+              var idxD = getActiveIdx(niD);
+              if (idxD !== -1) {
+                idxD < niD.length - 1 ? focusNavItem(niD[idxD + 1], false) : attemptNextPage();
+              }
+            }
+            // else: held key at bottom — do nothing, stay on last option.
+          } else if (key === 'ArrowUp' && atTop) {
+            if (!e.repeat) {
+              // Fresh Up at first option: close and go to previous nav item.
+              closeKbDropdown();
+              var niU = getCurrentPageNavItems();
+              var idxU = getActiveIdx(niU);
+              if (idxU !== -1) {
+                idxU > 0 ? focusNavItem(niU[idxU - 1], true) : attemptPrevPage();
+              }
+            }
+            // else: held key at top — do nothing, stay on first option.
+          } else {
+            // Not at boundary: move highlight one step.
+            var newIdx = key === 'ArrowDown'
+              ? Math.min(_kbDrop.highlightIdx + 1, _kbDrop.options.length - 1)
+              : Math.max(_kbDrop.highlightIdx - 1, 0);
+            highlightKbDropdownItem(newIdx);
+          }
         }
         return;
       }
-      if (key === 'Enter' && _kbDrop.selectEl) {
+      if (key === 'Enter') {
         e.preventDefault();
-        confirmKbDropdown(active, _kbDrop.highlightIdx);
+        if (_kbDrop.selectEl) {
+          // Dropdown is open: confirm the highlighted option and advance.
+          confirmKbDropdown(active, _kbDrop.highlightIdx);
+        } else {
+          // Dropdown not open: Enter advances to the next nav item (or next page).
+          var niSel = getCurrentPageNavItems();
+          var idxSel = getActiveIdx(niSel);
+          if (idxSel !== -1) {
+            idxSel < niSel.length - 1 ? focusNavItem(niSel[idxSel + 1], false) : attemptNextPage();
+          }
+        }
         return;
       }
       if (key === 'Escape') {
@@ -3105,23 +3294,74 @@ function closeKbDropdown() {
       return;
     }
 
+    // ── Text input / textarea: Enter advances to next field ─────────
+    // Shift+Enter inside a textarea still inserts a newline (natural editing).
+    // Regular Enter always advances — never creates a new line.
+    if ((isTextInput || isTextarea) && key === 'Enter') {
+      if (isTextarea && e.shiftKey) return;   // Shift+Enter → allow browser newline
+      e.preventDefault();
+      var niEnter = getCurrentPageNavItems();
+      var idxEnter = getActiveIdx(niEnter);
+      if (idxEnter === -1) return;
+      idxEnter < niEnter.length - 1 ? focusNavItem(niEnter[idxEnter + 1], false) : attemptNextPage();
+      return;
+    }
+
     // ── Chip: Left/Right within group ────────────────────────────────
     if (isChip && (key === 'ArrowLeft' || key === 'ArrowRight')) {
       e.preventDefault();
-      moveWithinGroup(active, key === 'ArrowRight' ? 1 : -1);
+      var moved = moveWithinGroup(active, key === 'ArrowRight' ? 1 : -1);
+      // For select-on-move groups (ALS/BLS, Yes/No, thumbs): Left/Right also selects
+      if (moved && active.dataset.navSelect === 'true') moved.click();
       return;
     }
 
-    // ── Chip: Enter/Space selects ────────────────────────────────────
+    // ── Chip: Enter/Space ───────────────────────────────────────────
     if (isChip && (key === 'Enter' || key === ' ')) {
       e.preventDefault();
-      active.click();
+      var chipIsSingle = active.dataset.navSelect === 'true';
+      var chipIsMulti  = !chipIsSingle;
+
+      // Multi-select + Space: toggle and STAY in this group.
+      if (chipIsMulti && key === ' ') {
+        active.click();
+        return;
+      }
+
+      // Pertinent Negatives exception: Enter also stays within the group
+      // (both Space and Enter are "pick this item and keep browsing").
+      if (chipIsMulti && key === 'Enter' && active.dataset.navGroup === 'pertinent_negatives') {
+        active.click();
+        return;
+      }
+
+      // For single-choice groups, skip re-clicking an already-active chip —
+      // selectChip() toggles OFF if called while the chip is already active.
+      var chipAlreadyActive =
+        active.classList.contains('chip-active')  ||
+        active.classList.contains('tb-active')    ||
+        active.classList.contains('yn-active')    ||
+        active.classList.contains('als-active')   ||
+        active.classList.contains('bls-active');
+
+      if (chipIsMulti || !chipAlreadyActive) {
+        active.click();
+      }
+
+      // Advance focus (or enter revealed section for thumbs-down).
+      advanceAfterChipClick(active);
       return;
     }
 
-    // ── Up/Down: vertical nav from text fields and chips only ─────────
+    // ── Up/Down: vertical nav ─────────────────────────────────────────
     if (key !== 'ArrowDown' && key !== 'ArrowUp') return;
     if (!isTextField && !isChip) return;
+
+    // Textareas: only leave the field when the cursor is already at the boundary
+    if (isTextarea) {
+      if (key === 'ArrowDown' && active.selectionEnd < active.value.length) return;
+      if (key === 'ArrowUp'   && active.selectionStart > 0) return;
+    }
 
     var navItems = getCurrentPageNavItems();
     var idx = getActiveIdx(navItems);
@@ -3131,7 +3371,7 @@ function closeKbDropdown() {
     if (key === 'ArrowDown') {
       idx < navItems.length - 1 ? focusNavItem(navItems[idx + 1], false) : attemptNextPage();
     } else {
-      if (idx > 0) focusNavItem(navItems[idx - 1], true);
+      idx > 0 ? focusNavItem(navItems[idx - 1], true) : attemptPrevPage();
     }
   });
 
@@ -3139,6 +3379,20 @@ function closeKbDropdown() {
   document.addEventListener('mousedown', function(e) {
     if (_kbDrop.overlayEl && !_kbDrop.overlayEl.contains(e.target)) closeKbDropdown();
   });
+
+  // ── Expose auto-focus helper for init ────────────────────────────
+  window._kbAutoFocusFirst = function() {
+    var navItems = getCurrentPageNavItems();
+    if (navItems.length) focusNavItem(navItems[0], false);
+  };
+
+  // ── Expose advance-focus helper for autocomplete keydown handlers ─
+  window._kbAdvanceFocus = function() {
+    var navItems = getCurrentPageNavItems();
+    var idx = getActiveIdx(navItems);
+    if (idx === -1) return;
+    idx < navItems.length - 1 ? focusNavItem(navItems[idx + 1], false) : attemptNextPage();
+  };
 
   // ── Reset validation override when user edits any field ───────────
   document.addEventListener('input',  function(e) {
@@ -3153,6 +3407,7 @@ function closeKbDropdown() {
 // ── Init ──────────────────────────────────────────────────────
 renderProgressBar();
 renderStep(0);
+setTimeout(function() { if (window._kbAutoFocusFirst) window._kbAutoFocusFirst(); }, 0);
 </script>
 </body>
 </html>
